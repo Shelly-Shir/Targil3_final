@@ -1,8 +1,14 @@
 from cluster import Cluster
-from sample import Sample
-from data import Data
+
 
 class AgglomerativeClustering:
+
+    """
+        Constructor for class- divides all samples to cluster so that each cluster contains one sample
+        :param1 link: single link or complete link
+        :param2 samples: list of all samples
+        :returns: None
+        """
     def __init__(self, link, samples):
         self.link = link
         self.cluster_lst = []
@@ -11,30 +17,49 @@ class AgglomerativeClustering:
             new_cluster = Cluster([sample], sample.get_s_id())
             self.cluster_lst.append(new_cluster)
 
+    """
+        Calculates sample's in value
+        :param1 sample: certain point in cluster- xi
+        :param2 cluster: cluster which sample belongs to
+        :param3 cluster: the received cluster's size
+        :returns: sample's in value
+    """
     def in_xi(self, sample, cluster, cluster_size):
-        sum = 0
+        sum_distance = 0
         for cur_sample in cluster.get_samples():
             if sample.get_s_id() != cur_sample.get_s_id():
-                sum += cur_sample.compute_euclidean_distance(sample)
-        return sum/(cluster_size-1)
+                sum_distance += cur_sample.compute_euclidean_distance(sample)
+        return sum_distance / (cluster_size - 1)
 
+    """
+        Calculates sample's out value
+        :param1 sample: certain point in cluster- xi
+        :param2 cluster: cluster which sample belongs to
+        :returns: sample's out value
+    """
     def out_xi(self, sample, cluster):
         min_distance = 0
         first = True
         for cur_cluster in self.cluster_lst:
-            sum = 0
+            sum_distance = 0
             if cur_cluster.get_c_id() != cluster.get_c_id():
                 for temp_sample in cur_cluster.get_samples():
-                    sum += temp_sample.compute_euclidean_distance(sample)
+                    sum_distance += temp_sample.compute_euclidean_distance(sample)
                 cluster_size = len(cur_cluster.get_samples())
-                temp_distance = sum/cluster_size
+                temp_distance = sum_distance / cluster_size
                 if first:
                     min_distance = temp_distance
                     first = False
                 min_distance = min(temp_distance, min_distance)
         return min_distance
 
-    def calculate_silhoeutte(self, cluster, sample):
+    """
+        Calculates certain sample's silhouette
+        :param1 cluster: cluster which sample belongs to
+        :param2 sample: certain point in cluster- xi
+        :returns: sample's silhouette
+    """
+    def calculate_silhouette(self, cluster, sample):
         cluster_size = len(cluster.get_samples())
         if cluster_size <= 1:
             return 0
@@ -42,40 +67,69 @@ class AgglomerativeClustering:
         out_xi = self.out_xi(sample, cluster)
         return (out_xi-in_xi) / max(in_xi, out_xi)
 
-    def compute_silhoeutte(self):
-        silhoeutte_dic = {}
-        #for sample in self.samples:
-            #silhoeutte_dic.setdefault(sample.get_s_id(), 0)
+    """
+        Creates dictionary with all samples' s_id as keys and silhouette as values
+        :param: None
+        :returns: described dictionary
+    """
+    def compute_silhouette(self):
+        silhouette_dic = {}
         for cur_cluster in self.cluster_lst:
             for cur_sample in cur_cluster.get_samples():
-                silhoeutte_dic[cur_sample.get_s_id()] = self.calculate_silhoeutte(cur_cluster, cur_sample)
-        return silhoeutte_dic
+                silhouette_dic[cur_sample.get_s_id()] = self.calculate_silhouette(cur_cluster, cur_sample)
+        return silhouette_dic
 
-    def calculate_cluster_silhoeutte(self,cluster):
+    """
+        Calculates certain cluster's silhouette
+        :param cluster: cluster which we need to calculate its' silhouette
+        :returns: cluster's silhouette
+    """
+    def calculate_cluster_silhouette(self, cluster):
         cluster_size = len(cluster.get_samples())
-        return self.sum_silhoeutte(cluster)/cluster_size
+        return self.sum_silhouette(cluster) / cluster_size
 
-    def sum_silhoeutte(self, cluster):
-        silhoeutte_dic = self.compute_silhoeutte()
-        sum = 0
+    """
+        Sums all samples' silhouette in certain cluster
+        :param cluster: cluster which we need to sum its' samples' silhouette
+        :returns: described sum
+    """
+    def sum_silhouette(self, cluster):
+        silhouette_dic = self.compute_silhouette()
+        sum_silhouette = 0
         for sample in cluster.get_samples():
-            sum += silhoeutte_dic[sample.get_s_id()]
-        return sum
+            sum_silhouette += silhouette_dic[sample.get_s_id()]
+        return sum_silhouette
 
-    def calculate_sample_silhoeutte(self):
-        sum = 0
+    """
+        Calculates all samples' silhouette 
+        :param: None
+        :returns: all samples' silhouette
+    """
+    def calculate_sample_silhouette(self):
+        sum_samples = 0
         for cluster in self.cluster_lst:
-            sum += self.sum_silhoeutte(cluster)
+            sum_samples += self.sum_silhouette(cluster)
         sample_size = len(self.samples)
-        return sum/sample_size
+        return sum_samples/sample_size
 
-    def compute_summery_silhoeutte(self):
-        silhoeutte_cluster_dic = {}
+    """
+        Created a dictionary with clusters' c_id as keys and silhouette as values, and all data silhouette
+        :param: None
+        :returns: described dictionary 
+    """
+    def compute_summery_silhouette(self):
+        silhouette_cluster_dic = {}
         for cluster in self.cluster_lst:
-            silhoeutte_cluster_dic.setdefault(cluster.get_c_id(), self.calculate_cluster_silhoeutte(cluster))
-        silhoeutte_cluster_dic[0] = self.calculate_sample_silhoeutte()
-        return silhoeutte_cluster_dic
+            silhouette_cluster_dic.setdefault(cluster.get_c_id(), self.calculate_cluster_silhouette(cluster))
+        silhouette_cluster_dic[0] = self.calculate_sample_silhouette()
+        return silhouette_cluster_dic
 
+    """
+        Created a dictionary that contains samples as keys, and for each sample saves its' distance from all other 
+        samples
+        :param: None
+        :returns: described dictionary 
+    """
     def create_dict_sample_distance(self):
         sample_dict = {}
         for key in self.samples:
@@ -85,6 +139,11 @@ class AgglomerativeClustering:
             sample_dict.setdefault(key.get_s_id(), s_id_lst)
         return sample_dict
 
+    """
+        Computes total true positive pairs according to definition
+        :param: None
+        :returns: true positive number 
+    """
     def compute_true_positive(self):
         true_positive_counter = 0
         sample_lst = []
@@ -97,6 +156,11 @@ class AgglomerativeClustering:
                 sample_lst.append(sample1)
         return true_positive_counter
 
+    """
+       Computes total true negative pairs according to definition
+       :param: None
+       :returns: true negative number 
+   """
     def compute_true_negative(self):
         true_negative_counter = 0
         cluster_lst = []
@@ -110,16 +174,31 @@ class AgglomerativeClustering:
             cluster_lst.append(cluster)
         return true_negative_counter
 
+    """
+       Computes rand index value, according to definition
+       :param: None
+       :returns: rand index value
+   """
     def compute_rand_index(self):
         sample_size = len(self.samples)
         true_positive = self.compute_true_positive()
         true_negative = self.compute_true_negative()
         return (true_negative + true_positive) / (sample_size * (sample_size - 1) / 2)
 
+    """
+       Manages clustering process
+       :param max clusters: the max allowed clusters after clustering 
+       :returns: None
+   """
     def run(self, max_clusters):
+        min_distance = 0
+
+        # Creates a dictionary with all the distances' between all samples
         sample_distance_dict = self.create_dict_sample_distance()
         while len(self.cluster_lst) > max_clusters:
             first = True
+
+            # Each iteration looks for two clusters with minimal distance and merges them
             for cluster in self.cluster_lst:
                 for other in self.cluster_lst:
                     if other.get_c_id() != cluster.get_c_id():
@@ -135,12 +214,11 @@ class AgglomerativeClustering:
                             cluster2 = other
             cluster1.merge(cluster2)
             self.cluster_lst.remove(cluster2)
-        silhouette_dic = self.compute_summery_silhoeutte()
+        silhouette_dic = self.compute_summery_silhouette()
         self.cluster_lst.sort(key=lambda x: x.c_id)
 
+        # Prints all wanted details
         for cluster in self.cluster_lst:
             silhouette = silhouette_dic[cluster.get_c_id()]
             cluster.print_details(silhouette)
         print(f"Whole data: silhouette = {round(silhouette_dic[0], 3)}, RI = {round(self.compute_rand_index(),3)}")
-
-
