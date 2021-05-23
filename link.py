@@ -1,13 +1,24 @@
-from sample import Sample
-from cluster import Cluster
-
 class Link:
 
     def compute(self, cluster, other):
+        """
+        Calculates the distance between two clusters in single/complete link method
+        :param1 cluster: cluster
+        :param2 other:cluster to merge
+        :return: distance between two clusters in single/compete link method
+        """
         raise NotImplemented("subclass must implement abstract method")
+
 
 class SingleLink(Link):
     def compute(self, cluster, other, sample_distance_dict):
+        """
+        Calculates the distance between two clusters in single link method
+        :param1 cluster: cluster
+        :param2 other:cluster to merge
+        :param2 sample_distance_dict: dictionary containing the euclidean distance between two samples in the database
+        :return: distance between two clusters in single link method
+        """
         first = True
         min_distance = 0
         for cluster_sample in cluster.get_samples():
@@ -22,8 +33,16 @@ class SingleLink(Link):
                 min_distance = min(temp_distance, min_distance)
         return min_distance
 
+
 class CompleteLink(Link):
     def compute(self, cluster, other, sample_distance_dict):
+        """
+        Calculates the distance between two clusters in complete link method
+        :param1 cluster: cluster
+        :param2 other:cluster to merge
+        :param2 sample_distance_dict: dictionary containing the euclidean distance between two samples in the database
+        :return: distance between two clusters in complete link method
+        """
         max_distance = 0
         for cluster_sample in cluster.get_samples():
             for other_sample in other.get_samples():
