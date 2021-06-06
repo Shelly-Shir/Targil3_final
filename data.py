@@ -4,21 +4,21 @@ from sample import Sample
 
 class Data:
 
-    """
-       Initialize Data object
-       :param path: contains a path to csv
-       :returns: None
-    """
     def __init__(self, path):
+        """
+           Initialize Data object
+           :param path: contains a path to csv
+           :returns: None
+        """
         df = pandas.read_csv(path)
         self.data = df.to_dict(orient="list")
 
-    """
-       Creates a list of samples objects 
-       :param: None
-       :returns: list of samples
-    """
     def create_samples(self):
+        """
+           Creates a list of samples objects
+           :param: None
+           :returns: list of samples
+        """
         samples_lst = []
         for i, sample in enumerate(self.data["samples"]):
             genes_lst = []
